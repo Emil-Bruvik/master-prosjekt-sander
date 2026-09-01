@@ -60,11 +60,11 @@ def estimate_wind_power(lat, lon, capacity, startyear, installation_type, xrds,
     try:
         turbs = Turbines()
         turbine_model, mapped_hub_height = map_turbine_model(startyear, installation_type)
-        specs = turbs.specs(turbine_model)
+        turbine_group = turbs.find_group_for_turbine(turbine_model)
+        specs = turbs.specs(turbine_model, group=turbine_group)
         hub_height = mapped_hub_height if mapped_hub_height else specs['hub_height']
         rated_power_kw = specs['rated_power']
-
-        #Find the index of the height level closest to the hub_height
+        
         available_heights = xrds['heightAboveGround'].values
 
         ref_height = 100.0
@@ -89,16 +89,16 @@ def estimate_wind_power(lat, lon, capacity, startyear, installation_type, xrds,
         num_turbines = capacity / (rated_power_kw / 1000)
 
         if single_turb_curve:
-            power_curve = turbs.table(turbine_model)
+            power_curve = turbs.table(turbine_model, group=turbine_group)
             single_turbine_kw = np.interp(
-                wind_ts, 
-                power_curve['wind_speed_ms'], 
+                wind_ts,
+                power_curve['wind_speed_ms'],
                 power_curve['power_kw'],
                 left=0, right=rated_power_kw
             )
             total_farm_power_mw = (single_turbine_kw * num_turbines) / 1e3
         else:
-            farm_power_curve = generate_farm_power_curve(turbine_model, num_turbines)
+            farm_power_curve = generate_farm_power_curve(turbine_model, num_turbines, turbine_group)
             total_farm_power_mw = np.interp(
                 wind_ts, 
                 farm_power_curve['wind_speed_ms'], 
@@ -118,7 +118,7 @@ def estimate_wind_power(lat, lon, capacity, startyear, installation_type, xrds,
             print(f"Could not process farm at ({lat}, {lon}). Error: {e}")
         return None
 
-def generate_farm_power_curve(turb_name, n_turbines):
+def generate_farm_power_curve(turb_name, n_turbines, group="onshore"):
     """
     Generates a smoothed, farm-level power curve from a single-turbine curve.
 
@@ -139,14 +139,14 @@ def generate_farm_power_curve(turb_name, n_turbines):
         dict: A new power curve dictionary with 'wind_speed_ms' and 'power_kw' for the entire farm.
     """
     turbs = Turbines()
-    specs = turbs.specs(turb_name)
+    specs = turbs.specs(turb_name, group=group)
 
     min_ws = 0.0
     max_ws = 40.0
     ws_step = 0.25
     farm_wind_speeds = np.arange(min_ws, max_ws + ws_step, ws_step)
     farm_power = np.zeros_like(farm_wind_speeds)
-    power_curve = turbs.table(turb_name)
+    power_curve = turbs.table(turb_name, group=group)
 
     single_turbine_ws = power_curve['wind_speed_ms']
     single_turbine_power = power_curve['power_kw']
