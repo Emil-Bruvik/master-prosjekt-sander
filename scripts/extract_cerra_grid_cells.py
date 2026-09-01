@@ -15,12 +15,12 @@ from shapely.geometry import shape as shapely_shape
 from tqdm import tqdm
 
 # Run:
-# python scripts/offshore_wind_sites_timeseries_2024.py
+# python scripts/offshore_wind_sites_timeseries_2025.py
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-import functions
+import scripts.functions as functions
 
 
 MONTHS = [
@@ -30,17 +30,17 @@ MONTHS = [
 ]
 
 
-shape_folder = Path("/Data/gfi/vindenergi/nab015/Wind_data/havvind_identifiserteomrader_2023f") #path to shape files
+shape_folder = Path("Shape_data/havvind_identifiserteomrader_2023f") #path to shape files
 
 # -------- Script configuration --------
-SHAPEFILE = shape_folder / "havvind_identifiserteomrader_2023f.shp"
+SHAPEFILE = REPO_ROOT / shape_folder / "havvind_identifiserteomrader_2023f.shp"
 ALL_SITES = True
 SITE_NAMES = ""
 REFERENCE_CAPACITY_MW = 1000.0
 CAPACITY_DENSITY_MW_KM2 = 5.0
-YEAR = 2024
-WEATHER_ROOT = Path("/Data/gfi/vindenergi/nab015/CERRA_multi_level")
-OUTPUT = shape_folder / "havvind_identifiserteomrader_output/offshore_all_sites_wind_timeseries_2024_1000MW.nc"
+YEAR = 2025
+WEATHER_ROOT = Path("/Data/gfi/share/Reanalyses/CERRA")
+OUTPUT = REPO_ROOT / "output" / f"offshore_all_sites_wind_timeseries_{YEAR}_{int(REFERENCE_CAPACITY_MW)}MW.nc"
 
 
 def _read_site_metadata(shp_path: Path) -> list[dict]:
@@ -130,7 +130,6 @@ def estimate_site_timeseries(
     site: dict,
     cell_info: dict[str, np.ndarray],
     startyear: int,
-    prod_year: int,
     capacity_density_mw_km2: float,
     reference_capacity_mw: float | None,
 ) -> np.ndarray:
@@ -148,13 +147,10 @@ def estimate_site_timeseries(
     site_ts = np.zeros(ds.sizes["valid_time"], dtype=np.float64)
     for idx in range(n_cells):
         ts_mw = functions.estimate_wind_power(
-            country="Norway",
             lat=float(cell_info["lat"][idx]),
             lon=float(cell_info["lon"][idx]),
             capacity=cell_capacity_mw,
             startyear=startyear,
-            prod_year=prod_year,
-            status="operating",
             installation_type="offshore",
             xrds=ds,
             y_idx=int(cell_info["y_idx"][idx]),
@@ -218,8 +214,7 @@ def main() -> None:
                     ds=ds_wind,
                     site=site,
                     cell_info=site_cells[site_name],
-                    startyear=2024,
-                    prod_year=YEAR,
+                    startyear=YEAR,
                     capacity_density_mw_km2=CAPACITY_DENSITY_MW_KM2,
                     reference_capacity_mw=REFERENCE_CAPACITY_MW,
                 )
@@ -247,7 +242,7 @@ def main() -> None:
         },
         attrs={
             "year": int(YEAR),
-            "startyear_used_in_estimate_wind_power": 2024,
+            "startyear_used_in_estimate_wind_power": int(YEAR),
             "all_sites": int(bool(ALL_SITES)),
             "reference_capacity_mw_per_site": (
                 float(REFERENCE_CAPACITY_MW) if REFERENCE_CAPACITY_MW is not None else np.nan

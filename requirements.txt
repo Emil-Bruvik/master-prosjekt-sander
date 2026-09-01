@@ -1,0 +1,11 @@
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.15.2
+pyshp==3.0.3
+shapely==2.0.7
+tqdm==4.67.3
+turbine-models==0.2.1
+xarray==2025.6.1
+h5netcdf==1.8.1
+h5py==3.15.1
+netCDF4==1.7.4
