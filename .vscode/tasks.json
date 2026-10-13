@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Norwegian 2025 wind calculator",
+			"type": "shell",
+			"command": "/home/nab015/.conda/envs/energy_mod/bin/python",
+			"args": [
+				"scripts/example.py"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

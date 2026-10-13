@@ -4,6 +4,21 @@ import turbine_models
 from turbine_models.parser import Turbines
 from scipy.stats import norm
 
+
+def get_bidding_zone_mapping(area_code):
+    zones = {
+        "NO1": ["Akershus", "Buskerud", "Innland", "Innlandet", "Oslo", "Viken", "Vestfold", "Østfold"],
+        "NO2": ["Agder", "Rogaland", "Telemark", "Vestfold og Telemark"],
+        "NO3": ["More og Romsdal", "Møre og Romsdal", "Trondelag", "Trøndelag"],
+        "NO4": ["Finnmark", "Nordland", "Troms", "Troms og Finnmark"],
+        "NO5": ["Vestland"],
+    }
+    try:
+        return zones[area_code]
+    except KeyError as exc:
+        raise ValueError(f"Unknown Norwegian bidding zone: {area_code}") from exc
+
+
 def map_turbine_model(start_year: int, installation_type: str):
     """
     Map a wind farm's start year to an appropriate turbine model AND 
